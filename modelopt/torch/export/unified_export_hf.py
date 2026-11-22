@@ -1773,7 +1773,7 @@ def _write_hf_export_config(
     original_config = f"{export_dir}/config.json"
     with open(original_config) as file:
         config_data = json.load(file)
-    sanitize_hf_config_for_deployment(config_data, model)
+    sanitize_hf_config_for_deployment(config_data, model, _source_config_json(model))
     if quantization_config is not None:
         config_data["quantization_config"] = quantization_config
     if export_sparse_attention_config is not None:
@@ -1840,6 +1840,15 @@ def _source_checkpoint(model: nn.Module) -> str | None:
         or getattr(getattr(model, "config", None), "_name_or_path", None)
         or None
     )
+
+
+def _source_config_json(model: nn.Module) -> Any:
+    """The source checkpoint's parsed ``config.json``, or ``{}`` when there is none to read."""
+    ckpt = _source_checkpoint(model)
+    if ckpt and Path(ckpt, "config.json").is_file():
+        with contextlib.suppress(OSError, ValueError):
+            return json.loads(Path(ckpt, "config.json").read_text())
+    return {}
 
 
 def carryable_unplaced_keys(model: nn.Module) -> list[str]:
@@ -2040,11 +2049,7 @@ def _source_distributed_config_attrs(model: nn.Module):
     that cannot be read counts as having none. The run's values come back on exit, since the
     sharded model still reads them (transformers' ``tp_plan`` checks ``distributed_config``).
     """
-    source: Any = {}
-    ckpt = _source_checkpoint(model)
-    if ckpt and Path(ckpt, "config.json").is_file():
-        with contextlib.suppress(OSError, ValueError):
-            source = json.loads(Path(ckpt, "config.json").read_text())
+    source = _source_config_json(model)
 
     _missing = object()
     saved: list[tuple[Any, str, Any]] = []

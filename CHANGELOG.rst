@@ -49,6 +49,7 @@ Changelog
 - ``capture_quantized_weight_export_state`` now works on FSDP2-sharded (DTensor) weights; it raised on them, and could pick another weight's quantizer when local shards were empty.
 - NVFP4 weight export (Hugging Face checkpoints without TensorRT-LLM, and ONNX) now normalizes weights by the correctly rounded reciprocal of the block scale, as the Triton NVFP4 fake quant does, so a weight on an exact E2M1 rounding boundary no longer packs to a neighboring FP4 value; the Triton fake quant and FP8 scale sweep can also change at such boundaries. Re-export affected NVFP4 checkpoints.
 - Unified HF export now writes model-hub tensor names for models with 3-D weights that do not stack experts. GGML exports of MoE models whose conversion mapping fuses experts, and models with a short convolution such as GLM-5.3-Flash, fell back to transformers' in-memory names, which vLLM cannot load. Re-export affected checkpoints.
+- Unified HF export now keeps the source checkpoint's config field names when the export ships the checkpoint's own ``trust_remote_code`` config, even if Transformers loaded it under renamed fields. Nemotron-3.5-Super-VL exports made with Transformers 5.18 wrote ``text_config`` instead of ``llm_config`` and failed to load in TensorRT-LLM. Re-export affected checkpoints.
 
 *ONNX*
 
