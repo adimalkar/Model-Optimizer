@@ -2,7 +2,7 @@
 <html lang="en" data-accent-color="green" data-content_root="../">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Changelog - Model Optimizer 0.0.1.dev1+gcb911c99b</title><link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="modelopt API" href="1_modelopt_api.html" /><link rel="prev" title="All GitHub Examples" href="../examples/0_all_examples.html" /><script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Changelog - Model Optimizer 0.0.1.dev1+g450c1f048</title><link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="modelopt API" href="1_modelopt_api.html" /><link rel="prev" title="All GitHub Examples" href="../examples/0_all_examples.html" /><script>
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=e1a1ceaf" />
@@ -499,6 +499,9 @@ data-aria-dark="Switch to auto color mode">
 <li><p>Prefix agent skill names with <code class="docutils literal notranslate"><span class="pre">modelopt-</span></code>; existing names remain available as forwarding stubs.</p></li>
 </ul>
 <p><strong>Backward Breaking Changes</strong></p>
+<ul class="simple">
+<li><p>Megatron checkpoints now save the per-row weight quantizer state (e.g. FP8 per-channel, INT4 AWQ) of a gated (SwiGLU) MLP’s <code class="docutils literal notranslate"><span class="pre">linear_fc1</span></code> in Megatron’s SwiGLU layout, which earlier ModelOpt versions cannot load. Checkpoints saved by earlier versions still load, and are saved in the new layout from then on.</p></li>
+</ul>
 <p><strong>Deprecations</strong></p>
 <p><strong>Bug Fixes</strong></p>
 <p><em>Quantization</em></p>
@@ -517,6 +520,7 @@ data-aria-dark="Switch to auto color mode">
 <p><em>Megatron Framework (M-LM / M-Bridge)</em></p>
 <ul class="simple">
 <li><p>Preserve model-specific hybrid stacks when selecting MoE expert layouts in Megatron-Bridge, and reject grouped GEMM when a custom factory returns sequential experts. Custom built stack <code class="docutils literal notranslate"><span class="pre">ModuleSpec</span></code> values are now rejected; assign a named factory function instead.</p></li>
+<li><p>Fix loading a Megatron checkpoint at another tensor parallelism when a gated (SwiGLU) MLP’s <code class="docutils literal notranslate"><span class="pre">linear_fc1</span></code> has per-row weight quantizer state (e.g. FP8 per-channel, INT4 AWQ): the state was applied to the wrong rows.</p></li>
 </ul>
 <p><em>Misc</em></p>
 </section>
@@ -631,7 +635,6 @@ AutoQuantize path and preserve their linear-attention fusion groups during mixed
 <li><p><code class="docutils literal notranslate"><span class="pre">export_hf_checkpoint</span></code> now reads how a model is distributed from the plan recorded on it, and raises for an FSDP2-sharded model, or one in a multi-rank run, that carries none. <code class="docutils literal notranslate"><span class="pre">load_pretrained</span></code> and <code class="docutils literal notranslate"><span class="pre">examples/hf_ptq/hf_ptq.py</span> <span class="pre">--use_fsdp2</span></code> record it; for a model you distribute yourself (<code class="docutils literal notranslate"><span class="pre">fsdp2_wrap</span></code> and <code class="docutils literal notranslate"><span class="pre">parallel_load_and_prepare_fsdp2</span></code> record none), or export from several ranks as a DDP script does, record one with <code class="docutils literal notranslate"><span class="pre">modelopt.torch.utils.distributed.set_distribution_plan</span></code> before calibrating or exporting it, e.g. <code class="docutils literal notranslate"><span class="pre">DistributionPlan(world_size)</span></code> when every rank holds the whole model.</p></li>
 <li><p>Streaming speculative-decoding training’s vLLM connector (<code class="docutils literal notranslate"><span class="pre">modelopt.torch.speculative.plugins.rdma_hidden_states_connector</span></code>) now requires vLLM 0.22 or later. It is tested with vLLM 0.29 and later.</p></li>
 <li><p>The yes/no environment variables <code class="docutils literal notranslate"><span class="pre">MODELOPT_NVFP4_TRITON_SWEEP</span></code>, <code class="docutils literal notranslate"><span class="pre">MODELOPT_SKIP_WEIGHT_QUANT_CHECK</span></code> and <code class="docutils literal notranslate"><span class="pre">MODELOPT_TEGROUPED_COMPILE_WEIGHT_LOOP</span></code> now take <code class="docutils literal notranslate"><span class="pre">1</span></code>/<code class="docutils literal notranslate"><span class="pre">0</span></code>, <code class="docutils literal notranslate"><span class="pre">true</span></code>/<code class="docutils literal notranslate"><span class="pre">false</span></code>, <code class="docutils literal notranslate"><span class="pre">yes</span></code>/<code class="docutils literal notranslate"><span class="pre">no</span></code> or <code class="docutils literal notranslate"><span class="pre">on</span></code>/<code class="docutils literal notranslate"><span class="pre">off</span></code> in any case and raise on any other value, which they used to ignore. <code class="docutils literal notranslate"><span class="pre">modelopt.env</span></code> documents every <code class="docutils literal notranslate"><span class="pre">MODELOPT_*</span></code> variable ModelOpt reads.</p></li>
-<li><p>Megatron checkpoints now save the per-row weight quantizer state (e.g. FP8 per-channel, INT4 AWQ) of a gated (SwiGLU) MLP’s <code class="docutils literal notranslate"><span class="pre">linear_fc1</span></code> in Megatron’s SwiGLU layout, which earlier ModelOpt versions cannot load. Checkpoints saved by earlier versions still load, and are saved in the new layout from then on.</p></li>
 </ul>
 <p><strong>Deprecations</strong></p>
 <ul class="simple">
@@ -723,7 +726,6 @@ AutoQuantize path and preserve their linear-attention fusion groups during mixed
 <li><p>Nested <code class="docutils literal notranslate"><span class="pre">only_student_forward()</span></code> and <code class="docutils literal notranslate"><span class="pre">only_teacher_forward()</span></code> contexts now preserve the enclosing execution mode, including when an inner context is disabled or raises an exception.</p></li>
 <li><p>Fix Megatron Top-K/Top-P distillation gradients being multiplied by the tensor-parallel size when tensor parallelism is enabled; reported loss values are unchanged.</p></li>
 <li><p>Fix Megatron Top-K/Top-P distillation running out of memory at long sequence lengths with large vocabularies: since 0.48 its full-vocabulary normalizers kept several float32 copies of the logits alive. It now adds about one copy of the logits in their own dtype, and stays accurate for logits with a large common offset.</p></li>
-<li><p>Fix loading a Megatron checkpoint at another tensor parallelism when a gated (SwiGLU) MLP’s <code class="docutils literal notranslate"><span class="pre">linear_fc1</span></code> has per-row weight quantizer state (e.g. FP8 per-channel, INT4 AWQ): the state was applied to the wrong rows.</p></li>
 </ul>
 <p><em>Misc</em></p>
 <ul class="simple">
